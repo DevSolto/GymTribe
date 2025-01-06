@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String          @id @default(uuid())
+  name              String
+  username          String          @unique
+  email             String          @unique
+  password          String
+  dateOfBirth       DateTime
+  gender            String
+  profilePictureURL String?
+  referralCode      String?
+  points            Int             @default(0)
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  subscriptions     Subscription[]
+  groups            UserGroup[]
+  challenges        UserChallenge[]
+  activities        UserActivity[]
+  Group             Group[]
+}
+
+model Subscription {
+  id               String   @id @default(uuid())
+  userId           String
+  startDate        DateTime
+  endDate          DateTime
+  status           String
+  paymentMethod    String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Group {
+  id              String   @id @default(uuid())
+  name            String
+  description     String
+  isPrivate       Boolean  @default(false)
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  createdBy User        @relation(fields: [createdByUserId], references: [id])
+  members   UserGroup[]
+}
+
+model UserGroup {
+  userId   String
+  groupId  String
+  joinedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@id([userId, groupId])
+}
+
+model Challenge {
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  startDate     DateTime
+  endDate       DateTime
+  sponsorId     String?
+  rewardDetails String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sponsor      Partnership?    @relation(fields: [sponsorId], references: [id])
+  participants UserChallenge[]
+  activities   UserActivity[]
+}
+
+model UserChallenge {
+  userId      String
+  challengeId String
+  joinedAt    DateTime @default(now())
+  status      String
+
+  user      User      @relation(fields: [userId], references: [id])
+  challenge Challenge @relation(fields: [challengeId], references: [id])
+
+  @@id([userId, challengeId])
+}
+
+model UserActivity {
+  id              String   @id @default(uuid())
+  userId          String
+  challengeId     String
+  activityType    String
+  activityDetails String
+  imageUrl        String?
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id])
+  challenge Challenge @relation(fields: [challengeId], references: [id])
+}
+
+model Partnership {
+  id                String   @id @default(uuid())
+  name              String
+  description       String
+  profilePictureURL String?
+  partnershipType   String
+  startDate         DateTime
+  endDate           DateTime
+  revenueShare      Float
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  challenges Challenge[]
+}
